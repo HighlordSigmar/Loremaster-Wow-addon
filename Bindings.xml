@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="LOREMASTER_TOGGLE" header="LOREMASTER">
+    Loremaster_Toggle()
+  </Binding>
+</Bindings>

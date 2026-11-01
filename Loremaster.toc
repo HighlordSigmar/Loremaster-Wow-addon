@@ -1,0 +1,12 @@
+## Interface: 11200
+## Title: |cff33ffccLore|cffffffffmaster
+## Notes: Lists every quest of a zone and shows which ones you already did.
+## Author: Made with Claude
+## Version: 2.4.0
+## SavedVariables: Loremaster_DB
+## SavedVariablesPerCharacter: Loremaster_Char
+
+Data.lua
+Core.lua
+UI.lua
+Levels.lua
