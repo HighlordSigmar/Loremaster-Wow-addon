@@ -6,6 +6,7 @@ Quest checklist addon for **OctoWoW** (1.12 client). It lists every quest of a z
 - Statuses: Done, In quest log, Turn in!, Available, Level X, Needs: quest, and more
 - Start areas (Northshire Valley, Coldridge Valley, Shadowglen, Valley of Trials, Camp Narache, Deathknell) get their own header
 - Quest levels in the quest log, quest details and quest tracker: `[12]`, `[11+]` elite, `[22D]` dungeon, `[60R]` raid
+- Accepts and turns in quests automatically at NPCs, without looping on unfinished quests (hold Shift to do it yourself)
 - Learns the real zone of a quest when its quest giver offers it to you
 - Minimap button, filters, quest giver hints
 

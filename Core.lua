@@ -3,7 +3,7 @@
 -- Written for the 1.12 client (Lua 5.0): no "#" operator, no "%" operator.
 
 Loremaster = {
-  version = "2.4.0",
+  version = "2.5.0",
   index = nil,     -- built once per session
   inferred = {},   -- quests counted as done because a follow-up is done
   skills = {},     -- professions the player knows
@@ -357,6 +357,8 @@ local function LogTitle(i)
   if not header then title = StripLevelTag(title) end
   return title, level, tag, header, collapsed, complete
 end
+
+ZQ.LogTitle = LogTitle
 
 -- Read the quest log. Returns true when something changed.
 function ZQ:ScanLog()

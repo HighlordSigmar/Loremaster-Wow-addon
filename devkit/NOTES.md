@@ -17,6 +17,8 @@ Setup used:
 - git clone --depth 1 --filter=blob:none --sparse https://github.com/shagu/pfQuest
   (sparse: /*.lua /db/*.lua /db/enUS/*) and git clone https://github.com/paokkerkir/pfQuest-octo
 - Paths in the scripts point to /home/claude/src/... and /home/claude/addon/Loremaster/
+  (/home/claude/addon/Loremaster is a link to the git clone of this repository)
+- Repository: github.com/HighlordSigmar/Loremaster-Wow-addon (public, installed via Wuddle)
 
 ## Start areas (v2.3.0)
 AREAS in gen.lua: boxes on the zone map; a quest gets a=<n> when all its quest
@@ -44,6 +46,23 @@ Settings: Loremaster_DB.levels / levelTags / levelsTracker (nil = on).
 test_levels.lua runs Turtle's real FrameXML QuestLogFrame.lua
 (github.com/refaim/Turtle-WoW-UI-Source Interface/FrameXML/QuestLogFrame.lua,
 saved as /home/claude/ref/turtle_QuestLogFrame.lua) with Levels.lua.
+
+## Auto accept / turn in (v2.5.0, Auto.lua)
+1.12's NPC list (GetGossipActiveQuests: name, level pairs) does not say whether
+a quest is finished; auto-quest addons that click unfinished quests loop
+(progress window opens, closes, list reopens, click again). Auto.lua:
+- turn-in click only when the quest log says ready (complete == 1, or no
+  objectives); collapsed headers fall back to Loremaster's last scan (ZQ.log)
+- tried[] per conversation: never the same quest twice; reset after the NPC
+  windows were closed for 3 s
+- stops for: >1 reward choice, GetQuestMoneyToGet() > 0, QUEST_PROGRESS right
+  after picking an *available* quest (repeatable item turn-ins), quests ignored
+  in Loremaster, quests shared by a player (UnitIsPlayer("npc"))
+- Shift at any NPC event pauses until the conversation ends
+- every click is done on the next OnUpdate, after checking the panel is shown
+- stays off when an addon with "autoquest" in its name is loaded
+- settings: Loremaster_DB.auto / autoAccept / autoTurnin (nil = on)
+test_auto.lua: simulated NPC server (one reply per frame), 10 scenarios.
 
 ## Data state (v2.2.0, built 2026-11-01)
 - pfQuest-octo last commit: dd3dc1f 2026-05-13 "db: revert to 1.17.2 data" (no change since v2.1.0).

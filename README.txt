@@ -1,4 +1,4 @@
-Loremaster 2.4.0 - for OctoWoW (1.12 client)
+Loremaster 2.5.0 - for OctoWoW (1.12 client)
 =============================================
 
 Shows every quest of a zone and which ones you already did:
@@ -22,6 +22,9 @@ USE
   Minimap button: drag it anywhere on the screen, or Shift+drag to slide
   it around the minimap. Left-click: this zone. Right-click: all zones.
   /lm unignore    show all ignored quests again
+  /lm auto        accept and turn in quests automatically on/off
+  /lm auto accept     accepting on/off
+  /lm auto turnin     turning in on/off
   /lm levels      quest levels in the quest log on/off
   /lm levels tags     [12+] elite/group, [12D] dungeon, [12R] raid on/off
   /lm levels tracker  quest levels in the quest tracker on/off
@@ -55,6 +58,16 @@ NOTES
     are standing in and says so in the chat. This is saved for all your
     characters. "/lm moved" lists these moves: send them to whoever keeps
     the quest data so the next version has them right from the start.
+  - AUTO ACCEPT / TURN IN: talking to an NPC accepts its new quests and
+    turns in the quests that are ready. It only clicks a quest for turn-in
+    when your quest log says it is done, and never clicks the same quest
+    twice, so it does not loop on quests you have not finished.
+    It stops and lets you decide when you must choose a reward, when the
+    quest costs money, for repeatable item turn-ins (cloth, reputation
+    items), for quests you ignored in Loremaster and for quests shared by
+    other players. Hold Shift when you talk to an NPC to do it yourself.
+    If another auto-quest addon (AutoQuest...) is enabled, Loremaster
+    leaves it to that one.
   - QUEST LEVELS: the quest log, the quest details and the quest tracker
     show the level before each quest name: "[12] Princess Must Die!",
     "[22D] dungeon quest", "[11+] elite quest", "[60R] raid quest".

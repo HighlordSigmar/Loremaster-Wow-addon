@@ -38,6 +38,12 @@ function AbandonQuest() print("  (server) quest abandoned: " .. tostring(ABANDON
 DEFAULT_CHAT_FRAME = { AddMessage = function(self, m) print("[chat] " .. string.gsub(m, "|c%x%x%x%x%x%x%x%x", "")) end }
 function getglobal(k) return rawget(getfenv(0), k) end
 function setglobal(k, v) rawset(getfenv(0), k, v) end
+function UnitExists(u) return u == "player" or (u == "npc" and NPC_NAME ~= nil) end
+function UnitIsPlayer(u) return u == "player" end
+function UnitIsUnit(a, b) return a == b end
+function GetNumAddOns() return 1 end
+function GetAddOnInfo() return "Loremaster" end
+function IsAddOnLoaded() return 1 end
 function UnitName(u) if u == "npc" then return NPC_NAME end return "Tester" end
 function GetDifficultyColor(l) return { r = 1, g = 1, b = 0 } end
 
@@ -130,6 +136,7 @@ end
 dofile(DIR .. "Core.lua")
 dofile(DIR .. "UI.lua")
 dofile(DIR .. "Levels.lua")
+dofile(DIR .. "Auto.lua")
 if QLLP_AFTER then QLLP_AFTER() end
 
 local function fire(e, a1)
