@@ -97,7 +97,10 @@ function AbandonQuest() end
 LOG = {}        -- { title, level, complete (1/nil), objectives }
 CLICKS = {}     -- everything the addon clicked
 local queue = {}
-local function send(e) table.insert(queue, e) end
+local function send(e) table.insert(queue, e); if DUP then table.insert(queue, e) end end
+DUP, LAG_LOG, STALE, BAGS_FULL, DUP_COMPLETE = false, false, false, false, false
+LATER = {}     -- { frame, fn }: the server changes the log a few frames later
+HANDED = {}    -- quests the server took (for the STALE list)
 local current
 
 function GetNumQuestLogEntries() return table.getn(LOG), table.getn(LOG) end
@@ -111,7 +114,9 @@ local function Ready(t) local i, q = InLog(t); return q and (q[3] == 1 or q[4] =
 
 local function Active()
   local r = {}
-  for _, t in ipairs(NPC.active) do if InLog(t) then table.insert(r, t) end end
+  for _, t in ipairs(NPC.active) do
+    if InLog(t) and not (HANDED[t] and not STALE) then table.insert(r, t) end
+  end
   return r
 end
 local function Available()
@@ -140,6 +145,7 @@ function GetAvailableTitle(i) return Available()[i] end
 local function PickActive(i)
   current = Active()[i]; table.insert(CLICKS, "turn in? " .. current)
   ShowPanel("QuestFrameProgressPanel"); send("QUEST_PROGRESS")
+  if STALE and HANDED[current] then STALE = false end -- the server only shows the stale list once
 end
 local function PickAvailable(i)
   current = Available()[i]; table.insert(CLICKS, "open new: " .. current)
@@ -149,14 +155,24 @@ end
 SelectGossipActiveQuest, SelectActiveQuest = PickActive, PickActive
 SelectGossipAvailableQuest, SelectAvailableQuest = PickAvailable, PickAvailable
 function GetTitleText() return current end
-function IsQuestCompletable() return Ready(current) or (NPC.repeatable and NPC.repeatable[current]) end
-function CompleteQuest() table.insert(CLICKS, "continue: " .. current); ShowPanel("QuestFrameRewardPanel"); send("QUEST_COMPLETE") end
+function IsQuestCompletable() return (Ready(current) and not HANDED[current]) or (NPC.repeatable and NPC.repeatable[current]) end
+function CompleteQuest() table.insert(CLICKS, "continue: " .. current); ShowPanel("QuestFrameRewardPanel"); send("QUEST_COMPLETE")
+  if DUP_COMPLETE then send("QUEST_COMPLETE") end end
 function GetNumQuestChoices() return NPC.choices and NPC.choices[current] or 0 end
 function GetQuestMoneyToGet() return NPC.money and NPC.money[current] or 0 end
 function GetQuestReward(c)
   table.insert(CLICKS, "complete: " .. current .. " (reward " .. tostring(c) .. ")")
-  local i = InLog(current); if i then table.remove(LOG, i) end
-  CloseAll(); send("QUEST_FINISHED"); send("QUEST_LOG_UPDATE"); Reopen()
+  -- the server refuses (bags full, or already turned in) and shows the reward window again
+  if BAGS_FULL or HANDED[current] then
+    if table.getn(CLICKS) > 40 then table.insert(CLICKS, "  !! LOOP: stopped the test"); CloseAll(); queue = {}; return end
+    ShowPanel("QuestFrameRewardPanel"); send("QUEST_COMPLETE"); return
+  end
+  if HANDED[current] then table.insert(CLICKS, "  !! " .. current .. " was already turned in") end
+  HANDED[current] = true
+  local t = current
+  local function remove() local i = InLog(t); if i then table.remove(LOG, i) end; send("QUEST_LOG_UPDATE") end
+  if LAG_LOG then table.insert(LATER, { LAG_LOG, remove }) else remove() end
+  CloseAll(); send("QUEST_FINISHED"); Reopen()
 end
 function AcceptQuest()
   table.insert(CLICKS, "accept: " .. current)
@@ -175,11 +191,15 @@ for i = 1, 5 do tick() end
 -- run a conversation: one server message per frame
 local function Run(label, npc, frames)
   print("---- " .. label .. " ----")
-  CLICKS = {}; queue = {}
+  CLICKS = {}; queue = {}; LATER = {}; HANDED = {}
   TalkTo(npc)
   for f = 1, frames or 80 do
     local e = table.remove(queue, 1)
     if e then fire(e) end
+    for k = table.getn(LATER), 1, -1 do
+      LATER[k][1] = LATER[k][1] - 1
+      if LATER[k][1] <= 0 then local fn = LATER[k][2]; table.remove(LATER, k); fn() end
+    end
     tick()
   end
   for _, c in ipairs(CLICKS) do print("  " .. c) end
@@ -187,6 +207,7 @@ local function Run(label, npc, frames)
   for _, n in ipairs(PANELS) do if _G[n]._shown then panel = n end end
   print("  window left open: " .. panel)
   CloseAll(); fire("GOSSIP_CLOSED"); for i = 1, 40 do tick() end -- walk away
+  CLOCK = CLOCK + 120 -- the next conversation is a while later
 end
 
 -- 1) the AutoQuest loop case: one finished and one unfinished quest from the same NPC, plus new ones
@@ -251,4 +272,24 @@ ADDONS = { "Loremaster", "AutoQuest" }; Loremaster.warnedAuto = nil
 fire("PLAYER_ENTERING_WORLD")
 LOG = { { "A Threat Within", 2, nil, 0 } }
 Run("with AutoQuest enabled", { name = "X", active = { "A Threat Within" }, available = {} })
+-- 11) server quirks: the same NPC as in 1), with a slow / repeating server
+local function quirk(label)
+  LOG = { { "A Threat Within", 2, nil, 0 }, { "Kobold Camp Cleanup", 2, nil, 1 }, { "Investigate Echo Ridge", 3, 1, 1 } }
+  Run(label, { name = "Marshal McBride", active = { "Kobold Camp Cleanup", "A Threat Within", "Investigate Echo Ridge" },
+    available = { "Brotherhood of Thieves" } }, 120)
+end
+ADDONS = { "Loremaster" }; fire("PLAYER_ENTERING_WORLD")
+DUP = true; quirk("server sends every window twice"); DUP = false
+LAG_LOG = 15; quirk("quest log updates late after a turn-in"); LAG_LOG = false
+STALE = true; LAG_LOG = 15; quirk("NPC list still shows the turned-in quest once"); STALE = false; LAG_LOG = false
+DUP = true; LAG_LOG = 15; STALE = true; quirk("all of it at once"); DUP = false; LAG_LOG = false; STALE = false
+-- 12) the server refuses the turn-in and shows the reward window again
+LOG = { { "A Threat Within", 2, nil, 0 } }
+BAGS_FULL = true
+Run("bags full: server shows the reward again", { name = "X", active = { "A Threat Within" }, available = {} })
+BAGS_FULL = false
+LOG = { { "A Threat Within", 2, nil, 0 } }
+DUP_COMPLETE = true
+Run("reward window sent twice: second click is refused", { name = "X", active = { "A Threat Within" }, available = {} })
+DUP_COMPLETE = false
 print("DONE")

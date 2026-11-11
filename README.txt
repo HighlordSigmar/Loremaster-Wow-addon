@@ -1,4 +1,4 @@
-Loremaster 2.5.0 - for OctoWoW (1.12 client)
+Loremaster 2.5.1 - for OctoWoW (1.12 client)
 =============================================
 
 Shows every quest of a zone and which ones you already did:
@@ -60,8 +60,10 @@ NOTES
     the quest data so the next version has them right from the start.
   - AUTO ACCEPT / TURN IN: talking to an NPC accepts its new quests and
     turns in the quests that are ready. It only clicks a quest for turn-in
-    when your quest log says it is done, and never clicks the same quest
-    twice, so it does not loop on quests you have not finished.
+    when your quest log says it is done, and clicks each step of a quest
+    only once per conversation, so it cannot loop. If the server refuses a
+    turn-in (bags full) and shows the same window again, Loremaster says so
+    in the chat and leaves that window to you.
     It stops and lets you decide when you must choose a reward, when the
     quest costs money, for repeatable item turn-ins (cloth, reputation
     items), for quests you ignored in Loremaster and for quests shared by

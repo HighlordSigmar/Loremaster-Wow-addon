@@ -16,10 +16,16 @@ local Print = ZQ.Print
 
 local auto = CreateFrame("Frame", "LoremasterAutoFrame")
 local action = nil      -- one click, done on the next frame
-local tried = {}        -- quests already clicked in this conversation
+local clicked = {}      -- "step:quest" clicked in this conversation (each only once)
+local warned = {}       -- "step:quest" already explained in the chat
+local handedIn = {}     -- quest name -> time we turned it in
 local paused = false    -- Shift was held: hands off until the conversation ends
 local picked = nil      -- what we clicked last in a list: "active" or "available"
 local closedAt = nil    -- when the NPC windows closed
+local pending = nil     -- a "came back" message, shown only if the window stays
+
+-- a turned-in quest counts as gone this long, even while the quest log is slow
+local HANDED_IN_FOR = 60
 
 -- another auto-quest addon running at the same time would click too
 local function OtherAutoAddon()
@@ -45,12 +51,39 @@ local function Paused()
   return paused
 end
 
-local function Later(fn)
-  action = fn
-end
-
 local function Shown(frame)
   return frame and frame:IsVisible()
+end
+
+local function Key(step, title) return step .. ":" .. (title or "?") end
+local function Clicked(step, title) return clicked[Key(step, title)] end
+
+-- Click on the next frame, if that window is still open. Each step of each
+-- quest is clicked at most once per conversation: if the server shows the
+-- same window again, it refused (bags full, quest log full...) and clicking
+-- again would only loop.
+local function Later(step, title, panel, fn)
+  action = function()
+    if not Shown(panel) or Clicked(step, title) then return end
+    clicked[Key(step, title)] = true
+    fn()
+  end
+end
+
+-- The server showed a window we already answered. Never click it again.
+-- If it is still open a moment later the server refused: say why, once.
+-- (When the game only sent the window twice, it is gone by then.)
+local function Again(step, title, panel, why)
+  if not Clicked(step, title) then return false end
+  if not warned[Key(step, title)] then
+    pending = { at = GetTime() + 1.5, step = step, title = title, panel = panel, why = why }
+  end
+  return true
+end
+
+local function JustHandedIn(title)
+  local t = title and handedIn[title]
+  return t and GetTime() - t < HANDED_IN_FOR
 end
 
 -- names of the quests in the log that are ready to turn in
@@ -69,6 +102,10 @@ local function ReadyQuests()
   for _, entry in pairs(ZQ.log or {}) do
     if not seen[entry.title] and entry.ready then ready[entry.title] = true end
   end
+  -- just turned in, but the quest log has not caught up yet
+  for title in pairs(ready) do
+    if JustHandedIn(title) then ready[title] = nil end
+  end
   return ready
 end
 
@@ -84,22 +121,18 @@ local function Ignored(title)
 end
 
 -- choose what to click in an NPC's list
--- active/available: lists of quest names; returns kind, position
+-- active/available: lists of quest names; returns kind, position, name
 local function Choose(active, available)
   if On("turnin") then
     local ready = ReadyQuests()
     for i, title in ipairs(active) do
-      if ready[title] and not tried["active:" .. title] then
-        tried["active:" .. title] = true
-        return "active", i
-      end
+      if ready[title] and not Clicked("active", title) then return "active", i, title end
     end
   end
   if On("accept") then
     for i, title in ipairs(available) do
-      if not Ignored(title) and not tried["available:" .. title] then
-        tried["available:" .. title] = true
-        return "available", i
+      if not Ignored(title) and not JustHandedIn(title) and not Clicked("available", title) then
+        return "available", i, title
       end
     end
   end
@@ -117,11 +150,10 @@ end
 
 local function OnGossip()
   if Paused() then return end
-  local kind, i = Choose(FromPairs(GetGossipActiveQuests()), FromPairs(GetGossipAvailableQuests()))
+  local kind, i, title = Choose(FromPairs(GetGossipActiveQuests()), FromPairs(GetGossipAvailableQuests()))
   if not kind then return end
-  picked = kind
-  Later(function()
-    if not Shown(GossipFrame) then return end
+  Later(kind, title, GossipFrame, function()
+    picked = kind
     if kind == "active" then SelectGossipActiveQuest(i) else SelectGossipAvailableQuest(i) end
   end)
 end
@@ -132,11 +164,10 @@ local function OnGreeting()
   local active, available = {}, {}
   for i = 1, GetNumActiveQuests() do table.insert(active, ZQ.StripLevelTag(GetActiveTitle(i))) end
   for i = 1, GetNumAvailableQuests() do table.insert(available, ZQ.StripLevelTag(GetAvailableTitle(i))) end
-  local kind, i = Choose(active, available)
+  local kind, i, title = Choose(active, available)
   if not kind then return end
-  picked = kind
-  Later(function()
-    if not Shown(QuestFrameGreetingPanel) then return end
+  Later(kind, title, QuestFrameGreetingPanel, function()
+    picked = kind
     if kind == "active" then SelectActiveQuest(i) else SelectAvailableQuest(i) end
   end)
 end
@@ -146,10 +177,10 @@ local function OnDetail()
   if Paused() or not On("accept") then return end
   -- a quest shared by another player: you decide
   if UnitExists("npc") and UnitIsPlayer("npc") and not UnitIsUnit("npc", "player") then return end
-  if Ignored(ZQ.StripLevelTag(GetTitleText())) then return end
-  Later(function()
-    if Shown(QuestFrameDetailPanel) then AcceptQuest() end
-  end)
+  local title = ZQ.StripLevelTag(GetTitleText())
+  if Ignored(title) then return end
+  if Again("accept", title, QuestFrameDetailPanel, "Accept (is your quest log full?)") then return end
+  Later("accept", title, QuestFrameDetailPanel, function() AcceptQuest() end)
 end
 
 local function OnProgress()
@@ -159,20 +190,28 @@ local function OnProgress()
   -- we picked it as a new quest but it asks for items right away: a
   -- repeatable turn-in (cloth, reputation items). Leave it to you.
   if fromList == "available" then return end
+  local title = ZQ.StripLevelTag(GetTitleText())
+  if JustHandedIn(title) then return end
   if not IsQuestCompletable() then return end
-  Later(function()
-    if Shown(QuestFrameProgressPanel) then CompleteQuest() end
-  end)
+  if Again("continue", title, QuestFrameProgressPanel, "Continue") then return end
+  Later("continue", title, QuestFrameProgressPanel, function() CompleteQuest() end)
 end
 
 local function OnComplete()
   picked = nil
   if Paused() or not On("turnin") then return end
+  local title = ZQ.StripLevelTag(GetTitleText())
+  if Clicked("reward", title) then
+    -- the server shows the reward again: it did not take the turn-in
+    handedIn[title] = nil
+    Again("reward", title, QuestFrameRewardPanel, "Complete, but the server did not take it (are your bags full?)")
+    return
+  end
   local choices = GetNumQuestChoices()
   if choices > 1 then return end                                   -- you choose the reward
   if GetQuestMoneyToGet and GetQuestMoneyToGet() > 0 then return end -- costs money: you confirm
-  Later(function()
-    if not Shown(QuestFrameRewardPanel) then return end
+  Later("reward", title, QuestFrameRewardPanel, function()
+    handedIn[title] = GetTime()
     QuestFrameRewardPanel.itemChoice = choices
     GetQuestReward(choices)
   end)
@@ -219,11 +258,19 @@ auto:SetScript("OnUpdate", function()
     action = nil
     fn()
   end
+  if pending and GetTime() >= pending.at then
+    local p = pending
+    pending = nil
+    if Shown(p.panel) and ZQ.StripLevelTag(GetTitleText()) == p.title and not warned[Key(p.step, p.title)] then
+      warned[Key(p.step, p.title)] = true
+      Print("|cffffff00" .. p.title .. "|r: Loremaster already clicked " .. p.why .. ". It leaves this one to you.")
+    end
+  end
   -- the conversation is over when no NPC window was open for 3 seconds
   if closedAt and GetTime() - closedAt > 3 then
     closedAt = nil
     if not Shown(GossipFrame) and not Shown(QuestFrame) then
-      tried, paused, picked = {}, false, nil
+      clicked, warned, paused, picked, pending = {}, {}, false, nil, nil
     end
   end
 end)

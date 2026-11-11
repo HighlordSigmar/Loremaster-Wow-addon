@@ -3,7 +3,7 @@
 -- Written for the 1.12 client (Lua 5.0): no "#" operator, no "%" operator.
 
 Loremaster = {
-  version = "2.5.0",
+  version = "2.5.1",
   index = nil,     -- built once per session
   inferred = {},   -- quests counted as done because a follow-up is done
   skills = {},     -- professions the player knows

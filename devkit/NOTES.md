@@ -53,8 +53,16 @@ a quest is finished; auto-quest addons that click unfinished quests loop
 (progress window opens, closes, list reopens, click again). Auto.lua:
 - turn-in click only when the quest log says ready (complete == 1, or no
   objectives); collapsed headers fall back to Loremaster's last scan (ZQ.log)
-- tried[] per conversation: never the same quest twice; reset after the NPC
-  windows were closed for 3 s
+- clicked["step:quest"] per conversation (steps: active, available, accept,
+  continue, reward): each is clicked at most once, marked when the click is
+  really done; reset after the NPC windows were closed for 3 s.
+  Why (2.5.1): when CanRewardQuest fails (bags full, or a 2nd reward request
+  for a quest already rewarded) the server re-sends the OfferReward window
+  (QUEST_COMPLETE); clicking every QUEST_COMPLETE looped forever.
+  A repeat is never clicked; if its window is still open 1.5 s later the
+  chat explains (duplicate events close by then, so no false message).
+- handedIn[quest] = time of our turn-in: not "ready" for 60 s even while the
+  quest log or the NPC list still shows it
 - stops for: >1 reward choice, GetQuestMoneyToGet() > 0, QUEST_PROGRESS right
   after picking an *available* quest (repeatable item turn-ins), quests ignored
   in Loremaster, quests shared by a player (UnitIsPlayer("npc"))
@@ -62,7 +70,8 @@ a quest is finished; auto-quest addons that click unfinished quests loop
 - every click is done on the next OnUpdate, after checking the panel is shown
 - stays off when an addon with "autoquest" in its name is loaded
 - settings: Loremaster_DB.auto / autoAccept / autoTurnin (nil = on)
-test_auto.lua: simulated NPC server (one reply per frame), 10 scenarios.
+test_auto.lua: simulated NPC server (one reply per frame): 12 scenarios incl.
+duplicate windows, late quest log, stale NPC list, refused turn-in (bags full).
 
 ## Data state (v2.2.0, built 2026-11-01)
 - pfQuest-octo last commit: dd3dc1f 2026-05-13 "db: revert to 1.17.2 data" (no change since v2.1.0).
