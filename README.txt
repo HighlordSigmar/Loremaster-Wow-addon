@@ -1,4 +1,4 @@
-Loremaster 2.6.0 - for OctoWoW (1.12 client)
+Loremaster 2.6.1 - for OctoWoW (1.12 client)
 =============================================
 
 Shows every quest of a zone and which ones you already did:

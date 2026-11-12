@@ -837,7 +837,7 @@ events:RegisterEvent("QUEST_DETAIL")
 events:SetScript("OnUpdate", function()
   if not this.scanAt or GetTime() < this.scanAt then return end
   this.scanAt = nil
-  if ZQ:ScanLog() and frame:IsShown() then ZQ:Refresh() end
+  if ZQ:Safe("reading the quest log", ZQ.ScanLog) and frame:IsShown() then ZQ:Refresh() end
 end)
 
 events:SetScript("OnEvent", function()

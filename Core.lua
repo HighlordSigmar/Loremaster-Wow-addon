@@ -3,7 +3,7 @@
 -- Written for the 1.12 client (Lua 5.0): no "#" operator, no "%" operator.
 
 Loremaster = {
-  version = "2.6.0",
+  version = "2.6.1",
   index = nil,     -- built once per session
   inferred = {},   -- quests counted as done because a follow-up is done
   skills = {},     -- professions the player knows
@@ -376,27 +376,24 @@ function ZQ:MissingPrereq(q)
 end
 
 -- Find the quest id for a quest title (and level, when known).
--- Quests can share a title, so prefer the one that fits the player's progress.
+-- Quests can share a title (e.g. "The Balance of Nature" part 1 and 2), so
+-- prefer the one that fits the player's progress: not taken yet, not done,
+-- previous quests done. The level only breaks ties: the game's level can
+-- differ from the quest data, and trusting it first made part 2 look like
+-- the finished part 1 (part 2 was then never counted as done).
 function ZQ:ResolveID(title, level, taken)
   local list = self:GetIndex().titles[title or ""]
   if not list then return nil end
   if table.getn(list) == 1 then return list[1] end
 
-  local candidates = {}
-  if level then
-    for _, id in ipairs(list) do
-      local q = self:Quest(id)
-      if not q.l or q.l == level then table.insert(candidates, id) end
-    end
-  end
-  if table.getn(candidates) == 0 then candidates = list end
-
   local best, bestscore = nil, -1
-  for _, id in ipairs(candidates) do
+  for _, id in ipairs(list) do
+    local q = self:Quest(id)
     local score = 0
-    if not (taken and taken[id]) then score = score + 8 end
-    if not Loremaster_Char.done[id] then score = score + 4 end
-    if self:PrereqMet(id) then score = score + 2 end
+    if not (taken and taken[id]) then score = score + 16 end
+    if not Loremaster_Char.done[id] then score = score + 8 end
+    if self:PrereqMet(id) then score = score + 4 end
+    if level and q and q.l == level then score = score + 2 end
     if score > bestscore then best, bestscore = id, score end
   end
   return best
@@ -654,9 +651,24 @@ end
 -- Hooks: turn-ins and abandoned quests
 ------------------------------------------------------------------------
 
+-- An error in Loremaster must never stop the game from doing its part (or
+-- freeze Loremaster's view of the quest log): report it once, carry on.
+function ZQ:Safe(what, fn, a1, a2)
+  local ok, err = pcall(fn, self, a1, a2)
+  if not ok then
+    self.errors = self.errors or {}
+    if not self.errors[what] then
+      self.errors[what] = true
+      self.Print("|cffff5555Error while " .. what .. "|r (please report it): " .. tostring(err))
+    end
+    return nil
+  end
+  return err
+end
+
 local OriginalGetQuestReward = GetQuestReward
 GetQuestReward = function(choice)
-  ZQ:OnTurnIn(GetTitleText())
+  ZQ:Safe("recording a turn-in", ZQ.OnTurnIn, GetTitleText())
   return OriginalGetQuestReward(choice)
 end
 

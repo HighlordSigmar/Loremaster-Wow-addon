@@ -172,11 +172,13 @@ function GetQuestReward(c)
   local t = current
   local function remove() local i = InLog(t); if i then table.remove(LOG, i) end; send("QUEST_LOG_UPDATE") end
   if LAG_LOG then table.insert(LATER, { LAG_LOG, remove }) else remove() end
-  CloseAll(); send("QUEST_FINISHED"); Reopen()
+  CloseAll(); send("QUEST_FINISHED")
+  local nxt = NPC.next and NPC.next[t]
+  if nxt then current = nxt; ShowPanel("QuestFrameDetailPanel"); send("QUEST_DETAIL") else Reopen() end
 end
 function AcceptQuest()
   table.insert(CLICKS, "accept: " .. current)
-  table.insert(LOG, { current, 5, nil, 1 }); NPC.gone[current] = true
+  table.insert(LOG, { current, (NPC.levels and NPC.levels[current]) or 5, nil, 1 }); NPC.gone[current] = true
   CloseAll(); send("QUEST_FINISHED"); send("QUEST_LOG_UPDATE"); Reopen()
 end
 
@@ -292,4 +294,32 @@ LOG = { { "A Threat Within", 2, nil, 0 } }
 DUP_COMPLETE = true
 Run("reward window sent twice: second click is refused", { name = "X", active = { "A Threat Within" }, available = {} })
 DUP_COMPLETE = false
+-- 13) a follow-up with the SAME name, offered right after the turn-in
+--     (The Balance of Nature 456 -> 457, Woodland Protector 458 -> 459)
+local C = Loremaster_Char.done
+C[456], C[457] = nil, nil
+LOG = { { "The Balance of Nature", 2, 1, 1 } }
+local ilthalaine = { name = "Conservator Ilthalaine", active = { "The Balance of Nature" }, available = {},
+  next = { ["The Balance of Nature"] = "The Balance of Nature" }, levels = { ["The Balance of Nature"] = 3 } }
+Run("Balance of Nature part 1, part 2 offered at once", ilthalaine)
+print("  done 456: " .. tostring(C[456]) .. ", done 457: " .. tostring(C[457]))
+for i = 1, 30 do tick() end
+LOG[1][3] = 1   -- part 2 finished
+ilthalaine.next = nil
+Run("Balance of Nature part 2 turned in", ilthalaine)
+for i = 1, 30 do tick() end
+print("  done 456: " .. tostring(C[456]) .. ", done 457: " .. tostring(C[457]))
+-- 14) same, but the game reports part 2 with part 1's level from the data
+C[456], C[457] = nil, nil
+LOG = { { "The Balance of Nature", 2, 1, 1 } }
+ilthalaine.next = { ["The Balance of Nature"] = "The Balance of Nature" }
+ilthalaine.levels = { ["The Balance of Nature"] = 2 }
+Run("game shows part 2 as level 2: part 1 turned in, part 2 accepted", ilthalaine)
+for i = 1, 30 do tick() end
+local st = Loremaster:GetStatus(457)
+print("  done 456: " .. tostring(C[456]) .. ", done 457: " .. tostring(C[457]) .. ", part 2 status: " .. st .. ", part 1 status: " .. Loremaster:GetStatus(456))
+LOG[1][3] = 1; ilthalaine.next = nil
+Run("game shows part 2 as level 2: part 2 turned in", ilthalaine)
+for i = 1, 30 do tick() end
+print("  done 456: " .. tostring(C[456]) .. ", done 457: " .. tostring(C[457]) .. ", part 2 status: " .. Loremaster:GetStatus(457))
 print("DONE")

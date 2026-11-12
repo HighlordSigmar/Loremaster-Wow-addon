@@ -96,6 +96,16 @@ a GM Island spawn). Loch Modan NPCs also on the Grim Reaches map are pinned to
 Loch Modan in GIVER_ZONE (level rule picked Grim Reaches for their L38-48 quests).
 Not used yet: repeatable, daily, max, type, exclusive, repMin*, hardcore.
 
+## Same-title quests (v2.6.1)
+ResolveID used the quest log level as a hard filter. When the game's level
+for part 2 equals the data level of part 1 (The Balance of Nature 456/457,
+The Woodland Protector 458/459), part 2 in the log resolved to the finished
+part 1: shown as "Turn in!", the turn-in recorded part 1 again, part 2 never
+done. Now level is only a tie-breaker: not taken 16, not done 8, previous
+quests done 4, level matches 2. test_auto scenario 14 reproduces it.
+ZQ:Safe(what, fn, ...) pcall-wraps the turn-in hook and the log scan; an
+error is printed once per kind and never blocks GetQuestReward.
+
 ## Old data state (v2.2.0, built 2026-11-01)
 - pfQuest-octo last commit: dd3dc1f 2026-05-13 "db: revert to 1.17.2 data" (no change since v2.1.0).
 - pfQuest base last commit: 104f356 2025-08-25.
