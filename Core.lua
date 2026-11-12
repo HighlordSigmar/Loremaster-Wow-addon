@@ -3,7 +3,7 @@
 -- Written for the 1.12 client (Lua 5.0): no "#" operator, no "%" operator.
 
 Loremaster = {
-  version = "2.5.2",
+  version = "2.6.0",
   index = nil,     -- built once per session
   inferred = {},   -- quests counted as done because a follow-up is done
   skills = {},     -- professions the player knows
@@ -330,13 +330,49 @@ end
 -- Quest log tracking
 ------------------------------------------------------------------------
 
+-- Previous quests. p: one of them done. pa: groups, one group done in full
+-- (e.g. all three "Mastery" quests for Big Game Hunter). pv: one of them in
+-- the quest log is enough (e.g. the Green Hills pages).
 function ZQ:PrereqMet(id)
   local q = self:Quest(id)
-  if not q or not q.p then return true end
+  if not q then return true end
+  local function done(pre) return Loremaster_Char.done[pre] or self.inferred[pre] end
+  if q.pv then
+    for _, pre in pairs(q.pv) do
+      if done(pre) or (self.log and self.log[pre]) then return true end
+    end
+    return false
+  end
+  if q.pa then
+    for _, group in pairs(q.pa) do
+      local all = true
+      for _, pre in pairs(group) do
+        if not done(pre) then all = false break end
+      end
+      if all then return true end
+    end
+    return false
+  end
+  if not q.p then return true end
   for _, pre in pairs(q.p) do
-    if Loremaster_Char.done[pre] or self.inferred[pre] then return true end
+    if done(pre) then return true end
   end
   return false
+end
+
+-- the previous quest to show in "Needs: ..." (one this character can do and
+-- has not done yet)
+function ZQ:MissingPrereq(q)
+  local list = q.pv or (q.pa and q.pa[1]) or q.p
+  local questzone = self:GetIndex().questzone
+  local first
+  for _, pre in ipairs(list) do
+    if not (Loremaster_Char.done[pre] or self.inferred[pre]) then
+      if questzone[pre] then return pre end
+      first = first or pre
+    end
+  end
+  return first or list[1]
 end
 
 -- Find the quest id for a quest title (and level, when known).
@@ -526,13 +562,8 @@ function ZQ:GetStatus(id)
   if q.e then return self.S_EVENT end
   if q.s and not self.skills[q.s] then return self.S_SKILL, q.s end
 
-  if q.p and not self:PrereqMet(id) then
-    -- show a previous quest this character can do (the list is "one of")
-    local questzone = self:GetIndex().questzone
-    for _, pre in ipairs(q.p) do
-      if questzone[pre] then return self.S_PREREQ, pre end
-    end
-    return self.S_PREREQ, q.p[1]
+  if (q.p or q.pa or q.pv) and not self:PrereqMet(id) then
+    return self.S_PREREQ, self:MissingPrereq(q)
   end
 
   if q.m and q.m > UnitLevel("player") then

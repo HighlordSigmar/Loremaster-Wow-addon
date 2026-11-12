@@ -1,23 +1,32 @@
--- Generates Loremaster/Data.lua from the pfQuest + pfQuest-octo databases (MIT license).
--- Run with Lua 5.0:  lua50 gen.lua > Data.lua
+-- Generates Loremaster/Data.lua. Run with Lua 5.0:  lua50 gen.lua > Data.lua
+--
+-- Source (default): OctoQuestDatabase (github.com/FrancisEgan/OctoQuestDatabase,
+-- MIT, see LICENSE-data.txt), converted to Lua by octo2lua.py into OCTODB_DIR.
+-- PFQUEST=true uses the older pfQuest + pfQuest-octo databases instead.
 
--- load and merge the databases (same as the harness, without the addon)
-local PF = "/home/claude/src/pfQuest/db/"
-local OCTO = "/home/claude/src/pfQuest-octo/db/"
-dofile(PF .. "init.lua")
-for _, f in pairs({ "quests", "units", "objects", "items", "zones" }) do
-  dofile(PF .. f .. ".lua"); dofile(PF .. "enUS/" .. f .. ".lua")
-  dofile(OCTO .. f .. "-turtle.lua"); dofile(OCTO .. "enUS/" .. f .. "-turtle.lua")
-end
-dofile(PF .. "enUS/professions.lua"); dofile(OCTO .. "enUS/professions-turtle.lua")
-local function patchtable(base, diff)
-  for k, v in pairs(diff) do
-    if type(v) == "string" and v == "_" then base[k] = nil else base[k] = v end
+if PFQUEST then
+  local PF = "/home/claude/src/pfQuest/db/"
+  local OCTO = "/home/claude/src/pfQuest-octo/db/"
+  dofile(PF .. "init.lua")
+  for _, f in pairs({ "quests", "units", "objects", "items", "zones" }) do
+    dofile(PF .. f .. ".lua"); dofile(PF .. "enUS/" .. f .. ".lua")
+    dofile(OCTO .. f .. "-turtle.lua"); dofile(OCTO .. "enUS/" .. f .. "-turtle.lua")
   end
-end
-for _, db in pairs({ "quests", "units", "objects", "items", "zones", "professions" }) do
-  if pfDB[db]["data-turtle"] then patchtable(pfDB[db]["data"], pfDB[db]["data-turtle"]) end
-  if pfDB[db]["enUS-turtle"] then patchtable(pfDB[db]["enUS"], pfDB[db]["enUS-turtle"]) end
+  dofile(PF .. "enUS/professions.lua"); dofile(OCTO .. "enUS/professions-turtle.lua")
+  local function patchtable(base, diff)
+    for k, v in pairs(diff) do
+      if type(v) == "string" and v == "_" then base[k] = nil else base[k] = v end
+    end
+  end
+  for _, db in pairs({ "quests", "units", "objects", "items", "zones", "professions" }) do
+    if pfDB[db]["data-turtle"] then patchtable(pfDB[db]["data"], pfDB[db]["data-turtle"]) end
+    if pfDB[db]["enUS-turtle"] then patchtable(pfDB[db]["enUS"], pfDB[db]["enUS-turtle"]) end
+  end
+  SOURCE = "pfQuest-octo 2026-05-13"
+else
+  OCTODB_DIR = OCTODB_DIR or "/home/claude/test/octodb/"
+  dofile(OCTODB_DIR .. "load.lua")
+  SOURCE = SOURCE or "OctoQuestDatabase"
 end
 
 local quests = pfDB.quests.data
@@ -26,6 +35,20 @@ local units, uloc = pfDB.units.data, pfDB.units.enUS
 local objects, oloc = pfDB.objects.data, pfDB.objects.enUS
 local items, iloc = pfDB.items.data, pfDB.items.enUS
 local zloc = pfDB.zones.enUS
+
+-- test/staff zones are never where a quest giver really stands
+BLOCKED_ZONES = { ["GM Island"] = true, ["Designer Island"] = true, ["Programmer Isle"] = true }
+for _, db in pairs({ units, objects }) do
+  for _, e in pairs(db) do
+    if type(e) == "table" and e.coords then
+      local keep = {}
+      for _, c in pairs(e.coords) do
+        if not (c[3] and BLOCKED_ZONES[zloc[c[3]] or ""]) then table.insert(keep, c) end
+      end
+      e.coords = keep
+    end
+  end
+end
 
 ------------------------------------------------------------------------
 -- zone of a quest (same rules as before): friendly quest givers first
@@ -131,6 +154,12 @@ GIVER_ZONE = {
   ["Lakota Windsong"] = "Thousand Needles",
   ["Ancestral Spirit"] = "Mulgore",                -- Red Rocks
   ["Lorekeeper Raintotem"] = "Mulgore",
+  -- Loch Modan NPCs also drawn on Turtle's Grim Reaches map; their quests are
+  -- level 38-48, so the level rule would pick Grim Reaches
+  ["Ghak Healtouch"] = "Loch Modan",              -- Thelsamar
+  ["Prospector Ironband"] = "Loch Modan",         -- Ironband's Excavation
+  ["Mountaineer Pebblebitty"] = "Loch Modan",     -- Algaz Station
+  ["Mountaineer Stormpike"] = "Loch Modan",
 }
 -- 2) areas: a quest giver inside this box of the zone's own map stands in it
 --    { zone, x1, y1, x2, y2 }
@@ -377,7 +406,7 @@ AREAS = {
   { "Tirisfal Glades", "Deathknell", 26, 60, 36, 74 },
   -- not a start area, but its own place (Turtle): the game may call it
   -- "Ironforge Airfields" instead of Dun Morogh
-  { "Dun Morogh", "Ironforge Airfields", 64, 14, 80, 32 },
+  { "Dun Morogh", "Ironforge Airfields", 64, 14, 76, 38 },
 }
 local function AreaOf(q, z)
   if not z or not q.start then return nil end
@@ -420,7 +449,8 @@ end
 
 local ids = {}
 for id, q in pairs(quests) do
-  if type(id) == "number" and type(q) == "table" and qloc[id] and qloc[id].T then table.insert(ids, id) end
+  -- quests switched off on the server are left out
+  if type(id) == "number" and type(q) == "table" and qloc[id] and qloc[id].T and not q.disabled then table.insert(ids, id) end
 end
 table.sort(ids)
 
@@ -449,12 +479,14 @@ local usedzones, usedskills = {}, {}
 local out = {}
 local function w(s) table.insert(out, s) end
 
-w("-- Quest data for Loremaster, generated from pfQuest + pfQuest-octo (MIT license, see LICENSE-data.txt)")
+w("-- Quest data for Loremaster, generated from " .. (PFQUEST and "pfQuest + pfQuest-octo" or "OctoQuestDatabase") .. " (MIT license, see LICENSE-data.txt)")
 w("-- Keys: T title, l level, m min level, r race mask, c class mask, p previous quests (one of),")
 w("--       x either/or group, e event, s profession, z zone (za/zh per faction), f giver faction, g quest givers,")
-w("--       a start area (Loremaster_Data.areas: name, zone)")
+w("--       a start area (Loremaster_Data.areas: name, zone),")
+w("--       pa all of these previous quests (groups: any one group done in full),")
+w("--       pv previous quests that only need to be in the quest log")
 w("Loremaster_Data = {}")
-w("Loremaster_Data.source = \"pfQuest-octo 2026-05-13\"")
+w("Loremaster_Data.source = " .. string.format("%q", SOURCE))
 w("Loremaster_Data.quests = {")
 local count = 0
 for _, id in ipairs(ids) do
@@ -471,6 +503,12 @@ for _, id in ipairs(ids) do
     if q.race then table.insert(parts, "r=" .. q.race) end
     if q.class then table.insert(parts, "c=" .. q.class) end
     if q.pre then table.insert(parts, "p=" .. list(q.pre)) end
+    if q.preAll then
+      local groups = {}
+      for _, g in ipairs(q.preAll) do table.insert(groups, list(g)) end
+      table.insert(parts, "pa={" .. table.concat(groups, ",") .. "}")
+    end
+    if q.preActive then table.insert(parts, "pv=" .. list(q.preActive)) end
     if q.close then table.insert(parts, "x=" .. list(q.close)) end
     if IsEvent(id, q) then table.insert(parts, "e=1") end
     if q.skill then table.insert(parts, "s=" .. q.skill); usedskills[q.skill] = true end

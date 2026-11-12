@@ -2,8 +2,12 @@
 
 Files for continuing work on the Loremaster addon (OctoWoW, 1.12 client, Lua 5.0).
 
-- gen.lua      builds Loremaster/Data.lua from pfQuest + pfQuest-octo (MIT).
-               Run: lua50 gen.lua > Data.lua
+- gen.lua      builds Loremaster/Data.lua from OctoQuestDatabase (MIT) since 2.6.0
+               (PFQUEST=true: the old pfQuest + pfQuest-octo sources).
+               Run: python3 -I octo2lua.py <OctoQuestDatabase> /home/claude/test/octodb
+                    lua50 -e 'SOURCE="OctoQuestDatabase <rev> <date>"' gen.lua > Data.lua
+- octo2lua.py  converts OctoQuestDatabase source/*.json to Lua files shaped like
+               pfDB.<db>.data/.enUS (JSON arrays = 1-based Lua sequences)
                Debug: DEBUG_FORCED=true lists every NPC moved by the zone fixes.
 - test_v2.lua  mock-runs (also start-area headers) Data.lua + Core.lua + UI.lua with fake WoW frames and a
                simulated quest log (turn-in, abandon, collapsed header, filters,
@@ -79,7 +83,20 @@ a quest is finished; auto-quest addons that click unfinished quests loop
 test_auto.lua: simulated NPC server (one reply per frame): 12 scenarios incl.
 duplicate windows, late quest log, stale NPC list, refused turn-in (bags full).
 
-## Data state (v2.2.0, built 2026-11-01)
+## Data source (v2.6.0, built 2026-11-12)
+OctoQuestDatabase (github.com/FrancisEgan/OctoQuestDatabase) da34187 2026-10-13:
+the resolved Questie-Octo database. Has Octo's 1.18-era zones/quests that
+pfQuest-octo (reverted to 1.17.2) lacks: +416 quests (Moonwhisper Coast 83,
+Grim Reaches 71, Balor 54, Northwind 40, airfield: Airfield Supplies, The
+Frostmane War, Chieftain Ubukaz...). Extra fields used: disabled (skipped, 50
+quests), preAll -> pa (groups, one group done in full), preActive -> pv (in log
+is enough). NPCs without coords there (Gowlfang, Torble...) are not spawned.
+gen.lua strips GM Island/Designer Island/Programmer Isle coords (AQ dragons had
+a GM Island spawn). Loch Modan NPCs also on the Grim Reaches map are pinned to
+Loch Modan in GIVER_ZONE (level rule picked Grim Reaches for their L38-48 quests).
+Not used yet: repeatable, daily, max, type, exclusive, repMin*, hardcore.
+
+## Old data state (v2.2.0, built 2026-11-01)
 - pfQuest-octo last commit: dd3dc1f 2026-05-13 "db: revert to 1.17.2 data" (no change since v2.1.0).
 - pfQuest base last commit: 104f356 2025-08-25.
 

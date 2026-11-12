@@ -335,8 +335,12 @@ local function RowOnEnter()
     GameTooltip:AddLine("Counted as done: you did the follow-up quest", .5, 1, .5)
     GameTooltip:AddLine("  " .. ZQ:Title(extra), 1, 1, 1)
   elseif status == ZQ.S_PREREQ then
-    local pre = q.p or {}
-    if table.getn(pre) > 1 then
+    local pre = q.pv or (q.pa and q.pa[1]) or q.p or {}
+    if q.pv then
+      GameTooltip:AddLine(table.getn(pre) > 1 and "First have one of these in your quest log:" or "First have this in your quest log:", 1, .6, .2)
+    elseif q.pa then
+      GameTooltip:AddLine(table.getn(pre) > 1 and "First do all of these:" or "First do:", 1, .6, .2)
+    elseif table.getn(pre) > 1 then
       GameTooltip:AddLine("First do one of these:", 1, .6, .2)
     else
       GameTooltip:AddLine("First do:", 1, .6, .2)

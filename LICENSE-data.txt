@@ -1,9 +1,35 @@
-The quest data in Data.lua was extracted from pfQuest and pfQuest-octo.
-  https://github.com/shagu/pfQuest
-  https://github.com/paokkerkir/pfQuest-octo
+The quest data in Data.lua is generated from OctoQuestDatabase
+  https://github.com/FrancisEgan/OctoQuestDatabase  (revision da34187 2026-10-13)
+with a few hand-checked zone fixes (see devkit/gen.lua).
+
+Its NOTICE.md:
+
+# Source and attribution
+
+Extracted from Questie-Octo 1.44 at `e631044bef85d68bf74ac0f79af35e1425201ee0`.
+Data credits: Questie-Octo/SandreaSub and contributors, pfQuest/Eric Mauser
+(Shagu), pfQuest-octo/Gurky and contributors, and pfQuest-turtle contributors.
+Their applicable MIT copyright and permission notices are retained in LICENSE.
+
+This is the resolved database previously used by Questie-Octo and Questline:
+base/Turtle/Octo overrides, deletion markers, enrichment and later corrections
+are already applied. It includes the existing reachability projection and
+supplemental data; it is not a complete server dump. No data facts were changed.
+
+Historical provenance also references Questie (GPLv3) and Turtle/Tortoise
+server/reference material (AGPLv3). The root MIT notice does not override any
+applicable upstream rights or establish a blanket license for those portions.
+Detailed original notices and license texts remain in Questie-Octo's
+`THIRD_PARTY_NOTICES.md`, `LICENSES/` and `Docs/DatabaseMigration/`.
+No upstream libraries, artwork, server software or addon runtime is bundled here.
+
+Its LICENSE:
 
 MIT License
 
+Copyright (c) 2026 Francis Egan
+Copyright (c) 2026 Questie-Octo contributors
+Copyright (c) 2017-2021 Eric Mauser (Shagu)
 Copyright (c) 2021 Eric Mauser (Shagu)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

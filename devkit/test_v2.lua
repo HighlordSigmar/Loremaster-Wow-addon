@@ -277,6 +277,21 @@ dump("Northshire collapsed", 3)
 click(F.rows[1]); print("after 2nd click: " .. headers())
 -- zone without start areas: no headers
 PLAYER.zone = "Westfall"; click(F.hereButton); print("Westfall headers: '" .. headers() .. "'")
+-- previous-quest rules from the new data: all of a group (pa), in the log (pv)
+local function st(id) local a, b = Loremaster:GetStatus(id); return a .. (b and (" " .. Loremaster:Title(b)) or "") end
+local D = Loremaster_Char.done
+if Loremaster_Data.quests[208] and Loremaster_Data.quests[208].pa then
+  D[188] = true; print("Big Game Hunter, 1 of 3 masteries done: " .. st(208))
+  D[193] = true; D[197] = true; print("Big Game Hunter, all 3 done: " .. st(208))
+  D[188], D[193], D[197] = nil, nil, nil
+end
+if Loremaster_Data.quests[339] and Loremaster_Data.quests[339].pv then
+  print("Chapter I without Green Hills: " .. st(339))
+  Loremaster.log[338] = { title = "The Green Hills of Stranglethorn" }
+  print("Chapter I with Green Hills in the log: " .. st(339))
+  Loremaster.log[338] = nil
+end
+
 -- a place the game names differently from the quest data (Turtle's airfield
 -- in Dun Morogh): "Here" falls back to the world map's zone
 MAPCALLS = 0

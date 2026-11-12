@@ -1,4 +1,4 @@
-Loremaster 2.5.2 - for OctoWoW (1.12 client)
+Loremaster 2.6.0 - for OctoWoW (1.12 client)
 =============================================
 
 Shows every quest of a zone and which ones you already did:
@@ -78,5 +78,9 @@ NOTES
     quest puts the plain name in the chat box.
     You don't need QuestLog Level Patch any more. If it is still installed,
     Loremaster leaves the levels to it (so you never get "[12] [12]").
-  - Quest data: pfQuest + pfQuest-octo database (May 2026), MIT license,
-    see LICENSE-data.txt. New Octo quests added after that are not listed.
+  - Quest data: OctoQuestDatabase (the data Questie-Octo uses, October
+    2026), MIT license, see LICENSE-data.txt. It has OctoWoW's own zones
+    and quests (Grim Reaches, Moonwhisper Coast, Balor, Northwind, Frostmane
+    Hollow, the Ironforge Airfields...). Quests switched off on the server
+    are left out. Octo quests added after it are not listed until the data
+    is rebuilt.

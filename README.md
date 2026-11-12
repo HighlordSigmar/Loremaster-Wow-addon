@@ -22,4 +22,4 @@ Type `/lm` in game, or `/lm help` for all commands. See `README.txt` for details
 
 The addon is in the repository root. `devkit/` holds the data generator and tests used to build and check it (not loaded by the game).
 
-Quest data: pfQuest + pfQuest-octo database (MIT license, see `LICENSE-data.txt`).
+Quest data: [OctoQuestDatabase](https://github.com/FrancisEgan/OctoQuestDatabase), the data Questie-Octo uses (MIT license, see `LICENSE-data.txt`).
