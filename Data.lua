@@ -5961,13 +5961,13 @@ Loremaster_Data.quests = {
 [55204]={T="Report From Stoutfist",l=28,m=20,r=589,z=11,g={{"Captain Stoutfist",9.9,57.5,11,f="A"}}},
 [55205]={T="Report From Snowbeard",l=28,m=20,r=589,p={55204},z=11,g={{"Captain Snowbeard",27.4,66.5,11,f="A"}}},
 [55206]={T="Hunting Dragonmaw",l=28,m=20,r=589,p={55205},z=11,g={{"Captain Stoutfist",9.9,57.5,11,f="A"}}},
-[55207]={T="The Quest For Pie",l=25,m=20,r=589,z=1,g={{"Rann Blackbeard",68.8,26,1,f="A"}}},
+[55207]={T="The Quest For Pie",l=25,m=20,r=589,a=7,z=1,g={{"Rann Blackbeard",68.8,26,1,f="A"}}},
 [55208]={T="The Pie Delivery",l=25,m=20,r=589,p={55207},z=11,g={{"Innkeeper Heidi",35.9,61.9,11,f="A"}}},
 [55209]={T="The Schematic Run!",l=24,m=20,r=589,z=11,g={{"Fradd Swiftgear",26.4,25.8,11,f="A"}}},
 [55210]={T="Tilting Oscilation Inhibitor?!",l=24,m=20,r=589,p={55209},z=11,g={{"Barthos Thundercrank",39.5,65.4,11,f="A"}}},
 [55211]={T="Oscilation Inhibited Disk!",l=24,m=20,r=589,p={55210},z=11,g={{"Barthos Thundercrank",39.5,65.4,11,f="A"}}},
 [55212]={T="Tinkering Away",l=22,m=18,r=589,z=11,g={{"Barthos Thundercrank",39.5,65.4,11,f="A"}}},
-[55213]={T="Supplies for Barthos",l=22,m=18,r=589,p={55212},z=1,g={{"Orion Coalborn",71.4,21.4,1,f="A"}}},
+[55213]={T="Supplies for Barthos",l=22,m=18,r=589,p={55212},a=7,z=1,g={{"Orion Coalborn",71.4,21.4,1,f="A"}}},
 [55215]={T="Uncovering Mystery",l=24,m=18,r=589,z=11,g={{"Lord Commander Ryke",36.4,67.3,11,f="A"}}},
 [55216]={T="The Mystery Continues",l=24,m=18,r=589,p={55215},z=11,g={{"Lord Commander Ryke",36.4,67.3,11,f="A"},{"Marge Blackwood",39.2,65.4,11,f="A"}}},
 [55217]={T="Zabini's Information",l=24,m=18,r=589,p={55216},z=11,g={{"Poppy Zabini",39.4,61.3,11,f="A"}}},
@@ -6366,6 +6366,7 @@ Loremaster_Data.areas = {
 [4]={"Valley of Trials",14},
 [5]={"Camp Narache",215},
 [6]={"Deathknell",85},
+[7]={"Ironforge Airfields",1},
 }
 Loremaster_Data.skills = {
 [182]="Herbalism",

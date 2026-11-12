@@ -3,7 +3,7 @@
 -- Written for the 1.12 client (Lua 5.0): no "#" operator, no "%" operator.
 
 Loremaster = {
-  version = "2.5.1",
+  version = "2.5.2",
   index = nil,     -- built once per session
   inferred = {},   -- quests counted as done because a follow-up is done
   skills = {},     -- professions the player knows
@@ -217,14 +217,39 @@ function ZQ:GetIndex()
 end
 
 -- zone id of the place the player is standing in
+-- name of the world map zone you are on (e.g. "Dun Morogh" while the game
+-- calls the place "Ironforge Airfields"); nil when it cannot be read
+local function MapZoneName()
+  if not SetMapToCurrentZone or not GetMapZones or not GetCurrentMapZone then return nil end
+  -- do not move the world map while you are looking at it
+  if WorldMapFrame and WorldMapFrame:IsVisible() then return nil end
+  SetMapToCurrentZone()
+  local continent, zone = GetCurrentMapContinent(), GetCurrentMapZone()
+  if not continent or continent < 1 or not zone or zone < 1 then return nil end
+  local names = { GetMapZones(continent) }
+  return names[zone]
+end
+
 function ZQ:GetPlayerZone()
   local index = self:GetIndex()
-  local candidates = { GetRealZoneText(), GetZoneText() }
+  local real = GetRealZoneText()
+  local candidates = { real, GetZoneText() }
   for _, name in pairs(candidates) do
     local zone = index.names[Trim(name)]
     if zone then return zone end
   end
-  return nil
+  -- The game names this place differently from the quest data: use the
+  -- world map's zone instead. Looked up once per place name.
+  real = Trim(real)
+  index.mapzones = index.mapzones or {}
+  local found = index.mapzones[real]
+  if found == nil then
+    local name = MapZoneName()
+    if not name then return nil end
+    found = index.names[Trim(name)] or false
+    index.mapzones[real] = found
+  end
+  return found or nil
 end
 
 -- zone id for a zone name, also for zones without quests

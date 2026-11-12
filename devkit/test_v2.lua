@@ -108,7 +108,7 @@ SlashCmdList = {}
 -- global access guard (only after setup)
 local allowed = { this = true, event = true, arg1 = true, SHIFT = true, CTRL = true, QUESTFRAME_TITLE = true, ABANDON_NAME = true,
   SlashCmdList = true, BINDING_HEADER_LOREMASTER = true, BINDING_NAME_LOREMASTER_TOGGLE = true,
-  SLASH_LOREMASTER1 = true, SLASH_LOREMASTER2 = true, GetQuestReward = true, AbandonQuest = true, CLOCK = true, NPC_NAME = true, QLLP_AFTER = true, QLLP_BEFORE = true, AREA_TEST = true, view_rows = true, START_ZONE = true }
+  SLASH_LOREMASTER1 = true, SLASH_LOREMASTER2 = true, GetQuestReward = true, AbandonQuest = true, CLOCK = true, NPC_NAME = true, QLLP_AFTER = true, QLLP_BEFORE = true, AREA_TEST = true, view_rows = true, START_ZONE = true, MAPCALLS = true }
 setmetatable(getfenv(0), {
   __newindex = function(t, k, v)
     if not allowed[k] and not string.find(k, "^Loremaster") then print("!! global assignment: " .. k) end
@@ -277,4 +277,16 @@ dump("Northshire collapsed", 3)
 click(F.rows[1]); print("after 2nd click: " .. headers())
 -- zone without start areas: no headers
 PLAYER.zone = "Westfall"; click(F.hereButton); print("Westfall headers: '" .. headers() .. "'")
+-- a place the game names differently from the quest data (Turtle's airfield
+-- in Dun Morogh): "Here" falls back to the world map's zone
+MAPCALLS = 0
+function SetMapToCurrentZone() MAPCALLS = MAPCALLS + 1 end
+function GetCurrentMapContinent() return 2 end
+function GetCurrentMapZone() return 1 end
+function GetMapZones(c) return "Dun Morogh", "Elwynn Forest" end
+PLAYER.zone = "Ironforge Airfields"
+click(F.hereButton)
+print("standing in Ironforge Airfields, Here shows: " .. tostring(Loremaster:ZoneName(Loremaster.view.zone)) .. " | " .. headers())
+Loremaster:GetPlayerZone(); Loremaster:GetPlayerZone()
+print("world map read " .. MAPCALLS .. " time(s) for that place")
 print("DONE")

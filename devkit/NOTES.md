@@ -27,6 +27,12 @@ UI shows a collapsible header per area (Loremaster_DB.collapsed[name]); a quest
 moved to another zone by zonefix loses its area. High Elf start area in
 Thalassian Highlands (Commander Anarileth ~48,84) not added: subzone name unknown.
 
+Ironforge Airfields (Dun Morogh 64-80, 14-32) is in AREAS too (2.5.2): only 2
+quests there in pfQuest-octo AND upstream pfQuest-turtle (The Quest For Pie,
+Supplies for Barthos). GetPlayerZone falls back to the world map's zone name
+(SetMapToCurrentZone + GetMapZones, skipped while the world map is open,
+cached per place in index.mapzones) when GetRealZoneText is not a quest zone.
+
 ## Other addons
 QuestLog Level Patch (sarf) replaces GetQuestLogTitle, calls this:GetName() and
 string.find on it -> error from unnamed frames, and adds "[12] " to titles.

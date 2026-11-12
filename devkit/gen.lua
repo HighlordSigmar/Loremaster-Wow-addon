@@ -375,6 +375,9 @@ AREAS = {
   { "Durotar", "Valley of Trials", 36, 60, 50, 80 },
   { "Mulgore", "Camp Narache", 34, 70, 56, 100 },
   { "Tirisfal Glades", "Deathknell", 26, 60, 36, 74 },
+  -- not a start area, but its own place (Turtle): the game may call it
+  -- "Ironforge Airfields" instead of Dun Morogh
+  { "Dun Morogh", "Ironforge Airfields", 64, 14, 80, 32 },
 }
 local function AreaOf(q, z)
   if not z or not q.start then return nil end

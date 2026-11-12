@@ -1,4 +1,4 @@
-Loremaster 2.5.1 - for OctoWoW (1.12 client)
+Loremaster 2.5.2 - for OctoWoW (1.12 client)
 =============================================
 
 Shows every quest of a zone and which ones you already did:
@@ -36,7 +36,8 @@ USE
   In the list:
     Click a header     hide / show a start area (Northshire Valley, Coldridge
                        Valley, Shadowglen, Valley of Trials, Camp Narache,
-                       Deathknell) or the rest of the zone
+                       Deathknell, Ironforge Airfields) or the rest of
+                       the zone
     Right-click        mark as done / not done
     Ctrl+Right-click   ignore a quest (not counted in the progress)
     Shift-click        put the quest name in the chat box
